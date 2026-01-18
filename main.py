@@ -15,7 +15,7 @@ root.geometry("1300x850")
 root.configure(background='#629FAD')
 
 instruction_label = tk.Label(root, text="Enter the message you want to encrypt:")
-instruction_label.pack(pady=10)
+instruction_label.pack(pady=100) 
 
 entry_box = tk.Entry(root, width=30)
 entry_box.pack(pady=5)
