@@ -2,7 +2,7 @@ from Crypto.Util import number
 import random 
 import rsa_core
 
-# NOTE
+
 # RSA is not a block cipher and CBC mode is not used in real-world cryptosystems.
 # testing of the key generation algorithm
 

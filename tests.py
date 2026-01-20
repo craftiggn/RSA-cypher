@@ -1,19 +1,73 @@
-import rsa_core 
-import ecb 
+import rsa_core
+import ecb  
 import cbc
+import unittest
 
+class TestRSAModes(unittest.TestCase):
+    def setUp(self):
+        self.e, self.d, self.n = rsa_core.keygen(128)
 
-# testing for the complete CBC encryption
-if True:
-    text = "Bicycle Day is an unofficial celebration on April 19th of the psychedelic revolution[1] and the first psychedelic trip on LSD by Albert Hofmann in 1943, in tandem with his bicycle ride home from Sandoz Labs.[2][3] It is commonly celebrated by ingesting psychedelics and riding a bike, sometimes in a parade,[4] and often with psychedelic-themed festivities.[5] The holiday was first named and declared in 1985 by Thomas Roberts, a psychology professor at Northern Illinois University,[6][7] but has likely been celebrated by psychedelic enthusiasts since the beginning of the psychedelic era, and celebrated in popular culture since at least 2004.[8]"
+        self.block_size = 16 
 
-    public_key, private_key, modulus = rsa_core.keygen(64)
-    block_size = 8
-    rsa_core.validate_block_size(block_size, modulus) # important! 
+        rsa_core.validate_block_size(self.block_size, self.n)
 
-    initialisation_vector, encrypted_content = cbc.encrypt_text(text, public_key, modulus, block_size)
-    print(f"initialisation_vector:\n{initialisation_vector}")
-    print(f"encrypted text:\n{encrypted_content}")
+    def test_ecb_basic(self):
+        print("\n--- Testing ECB Mode ---")
+        original_text = "Hello, this is a test of RSA ECB mode."
+        
+        print(f"Original: {original_text}")
+        
+        encrypted_blocks = ecb.encrypt_text(original_text, self.e, self.n, self.block_size)
+        print(f"Encrypted blocks: {encrypted_blocks}")
+        
+        decrypted_text = ecb.decrypt_text(encrypted_blocks, self.d, self.n, self.block_size)
+        print(f"Decrypted: {decrypted_text}")
+        
+        self.assertEqual(original_text, decrypted_text)
 
-    decrypted_text = cbc.decrypt_text(encrypted_content, private_key, modulus, initialisation_vector, block_size)
-    print(f"the text is decrypted back to:\n{decrypted_text}")
+    def test_ecb_patterns(self):
+        print("\n--- Testing ECB Pattern Leakage ---")
+
+        # ECB converts identical plaintext blocks into identical ciphertext blocks.
+        block_a = "A" * self.block_size
+        text = block_a + block_a
+        
+        encrypted_blocks = ecb.encrypt_text(text, self.e, self.n, self.block_size)
+        
+        print(f"Block 1: {encrypted_blocks[0]}")
+        print(f"Block 2: {encrypted_blocks[1]}")
+        
+        self.assertEqual(encrypted_blocks[0], encrypted_blocks[1], "ECB should produce identical cipher blocks for identical plain blocks")
+
+    def test_cbc_basic(self):
+        print("\n--- Testing CBC Mode ---")
+        original_text = "Bicycle Day is an unofficial celebration..."
+        
+        iv, encrypted_blocks = cbc.encrypt_text(original_text, self.e, self.n, self.block_size)
+        decrypted_text = cbc.decrypt_text(encrypted_blocks, self.d, self.n, iv, self.block_size)
+        
+        self.assertEqual(original_text, decrypted_text)
+
+    def test_cbc_iv_uniqueness(self):
+        print("\n--- Testing CBC IV Randomness ---")
+        text = "Same text, different encryption."
+        
+        # Encrypt twice
+        iv1, enc1 = cbc.encrypt_text(text, self.e, self.n, self.block_size)
+        iv2, enc2 = cbc.encrypt_text(text, self.e, self.n, self.block_size)
+        
+        self.assertNotEqual(iv1, iv2, "IVs should be random")
+        self.assertNotEqual(enc1, enc2, "Ciphertext should differ due to different IVs")
+
+    def test_padding_boundary(self):
+        print("\n--- Testing Exact Block Size Padding ---")
+        # Text length exactly matches block size
+        text = "A" * self.block_size
+        
+        # ECB
+        enc = ecb.encrypt_text(text, self.e, self.n, self.block_size)
+        dec = ecb.decrypt_text(enc, self.d, self.n, self.block_size)
+        self.assertEqual(text, dec)
+
+if __name__ == '__main__':
+    unittest.main()
