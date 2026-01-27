@@ -15,7 +15,9 @@ def random_prime(no_bits: int) -> int:
     """
     assert no_bits >= 2
 
-    return number.getPrime(no_bits)
+    p = number.getPrime(no_bits)
+    print(f"[KEYGEN] Generated prime ({no_bits} bits): {p}")
+    return p
 
 def keygen(no_bits: int) -> tuple[int, int, int]:
     """
@@ -33,14 +35,22 @@ def keygen(no_bits: int) -> tuple[int, int, int]:
     while p == q:
         q = random_prime(no_bits)
 
+    print(f"[KEYGEN] p = {p}")
+    print(f"[KEYGEN] q = {q}")
+
     # modulus
     n = p * q
+
+    print(f"[KEYGEN] RSA modulus n = p*q = {n}")
+    print(f"[KEYGEN] bit length of n = {n.bit_length()}")
 
     # Eulers totient (for prime numbers)
     phi = (p - 1) * (q - 1)
     
     # public exponent
     e = 65537
+
+    print(f"[KEYGEN] Public exponent e = {e}")
 
     # safety
     if phi % e == 0:
@@ -50,6 +60,9 @@ def keygen(no_bits: int) -> tuple[int, int, int]:
     # private exponent
     d = pow(e, -1, phi)
 
+    print(f"[KEYGEN] Private exponent d = {d}")
+
+    print("[KEYGEN] Key generation complete\n")
     return e, d, n
 
 # CONVERTING THE DATA INTO BLOCKS
@@ -63,7 +76,11 @@ def validate_block_size(block_size: int, n: int):
     :param n: RSA modulus.
     :type n: int
     """
+    print(f"[BLOCK CHECK] block_size = {block_size} bytes")
+    print(f"[BLOCK CHECK] modulus bit length = {n.bit_length()} bits")
+
     if block_size * 8 >= n.bit_length():
+        print(f"[BLOCK CHECK] block size invalid for RSA modulus")
         raise ValueError("Block size too large for RSA modulus")
 
 def pad_message(message: bytes, block_size: int) -> bytes:
@@ -80,6 +97,10 @@ def pad_message(message: bytes, block_size: int) -> bytes:
     # PKCS-style padding
     # NOTE can fail if the padding exceeds 255 (one byte)
     padding_len = block_size - (len(message) % block_size)
+
+    print(f"[PADDING] original length = {len(message)} bytes")
+    print(f"[PADDING] padding length = {padding_len} bytes")
+
     return message + bytes([padding_len] *  padding_len) # appends padding_len bytes, each equal to padding_len
 
 
@@ -93,6 +114,7 @@ def unpad_message(message: bytes) -> bytes:
     :rtype: bytes
     """
     padding_len = message[-1]
+    print(f"[UNPADDING] detected padding length = {padding_len} bytes")
     return message[:-padding_len]
 
 def string_to_blocks(text: str, block_size: int) -> list[int]:
@@ -108,11 +130,13 @@ def string_to_blocks(text: str, block_size: int) -> list[int]:
     """
 
     # pad the message
-    # print(f"text is:\n{text}")
+    print(f"[BLOCKING] original text:\n{text}")
+
     message = text.encode("utf-8")
-    # print(f"message encoded in utf-8 is:\n{message}")
+    print(f"[BLOCKING] UTF-8 encoded bytes:\n{message}")
+
     message = pad_message(message, block_size)
-    # print(f"padded message (block size = {block_size}) is:\n{message}")
+    print(f"[BLOCKING] padded message:\n{message}")
 
     # convert the message into blocks
     blocks = []
@@ -121,7 +145,8 @@ def string_to_blocks(text: str, block_size: int) -> list[int]:
         block = message[i: i+block_size]
         block_int = int.from_bytes(block, byteorder="big")
         blocks.append(block_int)
-    # print(f"message in block form is:\n{blocks}")
+
+    print(f"[BLOCKING] all message blocks:\n{blocks}\n")
     return blocks
 
 def blocks_to_string(blocks: list[int], block_size: int) -> str:
@@ -141,7 +166,8 @@ def blocks_to_string(blocks: list[int], block_size: int) -> str:
         message += chunk
 
     message = unpad_message(message)
-    # print(f"decoded message is:\n {message}")
+    print(f"[UNBLOCKING] unpadded message bytes:\n{message}")
+
     return message.decode("utf-8")
 
 # Wiktor add your documentation here
@@ -161,7 +187,11 @@ def rsa_encrypt_block(m: int, e: int, n: int) -> int:
     """
     if m >= n:
         raise ValueError("Block too large for modulus")
-    return pow(m, e, n)
+    r =  pow(m, e, n)
+    print(f"[ENCRYPT] plaintext block m = {m}")
+    print(f"[ENCRYPT] ciphertext c = m^e mod n = {r}")
+    return r
+
 
 def rsa_decrypt_block(c: int, d: int, n: int) -> int:
     """
@@ -176,4 +206,7 @@ def rsa_decrypt_block(c: int, d: int, n: int) -> int:
     :return: Description
     :rtype: int
     """
-    return pow(c, d, n)
+    r = pow(c, d, n)
+    print(f"[DECRYPT] ciphertext block c = {c}")
+    print(f"[DECRYPT] recovered plaintext m = c^d mod n = {pow(c, d, n)}")
+    return r

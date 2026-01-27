@@ -13,7 +13,10 @@ def generate_iv(block_size: int) -> int:
     """
     min_val = 0
     max_val = 2 ** (block_size * 8) - 1
-    return random.randint(min_val, max_val)
+    iv = random.randint(min_val, max_val)
+    print(f"[CBC] Generated IV = {iv}")
+
+    return iv
 
 
 def xor_int(a: int, b: int) -> int:
@@ -46,17 +49,28 @@ def rsa_cbc_encrypt(blocks: list[int], e: int, n: int, iv: int, block_size: int)
     :return: Encrypted blocks.
     :rtype: list[int]
     """
+    print("[CBC-ENCRYPT] Starting CBC encryption")
     encrypted_blocks = []
     mask = (1 << (block_size * 8)) - 1
 
     prev = iv & mask
+    print(f"[CBC-ENCRYPT] IV (masked) = {prev}")
 
     for block in blocks:
+        print(f"\n[CBC-ENCRYPT] Plaintext block = {block}")
+        print(f"[CBC-ENCRYPT] Previous cipher (prev) = {prev}")
+
         mixed = block ^ prev
+        print(f"[CBC-ENCRYPT] Mixed block (block ⊕ prev) = {mixed}")
+
         encrypted_block = rsa_core.rsa_encrypt_block(mixed, e, n)
+        print(f"[CBC-ENCRYPT] Encrypted block = {encrypted_block}")
+
         encrypted_blocks.append(encrypted_block)
         prev = encrypted_block & mask
+        print(f"[CBC-ENCRYPT] New prev (masked) = {prev}")
 
+    print("[CBC-ENCRYPT] CBC encryption complete\n")
     return encrypted_blocks
 
 
@@ -77,18 +91,31 @@ def rsa_cbc_decrypt(encrypted_blocks: list[int], d: int, n: int, iv: int, block_
     :return: Decrypted blocks.
     :rtype: list[int]
     """
+
     blocks = []
     mask = (1 << (block_size * 8)) - 1
 
     prev = iv & mask
+    print("[CBC-DECRYPT] Starting CBC decryption")
+    print(f"[CBC-DECRYPT] IV (masked) = {prev}")
 
     for encrypted_block in encrypted_blocks:
+        print(f"\n[CBC-DECRYPT] Encrypted block = {encrypted_block}")
+        print(f"[CBC-DECRYPT] Previous cipher (prev) = {prev}")
+
         mixed = rsa_core.rsa_decrypt_block(encrypted_block, d, n)
-        mixed &= mask 
+        print(f"[CBC-DECRYPT] Decrypted mixed value = {mixed}")
+
+        mixed &= mask
+        print(f"[CBC-DECRYPT] Mixed value after masking = {mixed}")
+
         block = mixed ^ prev
+        print(f"[CBC-DECRYPT] Plaintext block = {block}")
+
         blocks.append(block)
         prev = encrypted_block & mask
 
+    print("[CBC-DECRYPT] CBC decryption complete\n")
     return blocks
 
 

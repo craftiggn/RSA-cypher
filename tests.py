@@ -15,13 +15,13 @@ class TestRSAModes(unittest.TestCase):
         print("\n--- Testing ECB Mode ---")
         original_text = "Hello, this is a test of RSA ECB mode."
         
-        print(f"Original: {original_text}")
+        # print(f"Original: {original_text}")
         
         encrypted_blocks = ecb.encrypt_text(original_text, self.e, self.n, self.block_size)
-        print(f"Encrypted blocks: {encrypted_blocks}")
+        # print(f"Encrypted blocks: {encrypted_blocks}")
         
         decrypted_text = ecb.decrypt_text(encrypted_blocks, self.d, self.n, self.block_size)
-        print(f"Decrypted: {decrypted_text}")
+        # print(f"Decrypted: {decrypted_text}")
         
         self.assertEqual(original_text, decrypted_text)
 
